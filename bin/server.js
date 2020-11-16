@@ -19,9 +19,9 @@ const defer = () => {
   return results;
 };
 
-const loadScript = async (scrriptName, argv) => {
+const loadScript = async (scriptName, argv) => {
   const script = await fs.readFile(
-    path.join(__dirname, "scripts", scriptName),
+    path.join(__dirname, '..', "scripts", scriptName),
     "utf8"
   );
   const withVars =
@@ -31,7 +31,7 @@ const loadScript = async (scrriptName, argv) => {
 
 const sendCommand = (client, script, uuid) => {
   uuid = uuid || shortid();
-  client.emit({
+  client.emit('command', {
     uuid,
     cmd: script,
   });
@@ -50,7 +50,7 @@ const renderDateString = () =>
   let globalInit;
   server.on("connection", async (client) => {
 			const clientId = await new Promise((resolve) => {
-        client.on('id', (id) => {
+        client.on('id', ({ id }) => {
 			  	if (!id) {
             const clientId = bip39
               .generateMnemonic()
@@ -58,7 +58,7 @@ const renderDateString = () =>
               .filter(Boolean)
               .slice(0, 2)
               .join("-");
-					  client.emit('set-id', clientId);
+					  client.emit('set-id', { id: clientId });
 						resolve(clientId);
 		     } else {
 			  	 resolve(id);
@@ -76,7 +76,7 @@ const renderDateString = () =>
       );
     });
     client.on("response", (data) => {
-      if (data.uuid === "quiet") return;
+      if (data.uuid === "silent") return;
       if (!data.success) return console.log(data.response.stack);
       console.log(
         require("util").inspect(data.response, { colors: true, depth: 100 })
@@ -111,7 +111,7 @@ const renderDateString = () =>
     rl.makePrompt(v + "> ");
   };
   targetClient(null);
-  rl.on("line", (line) => {
+  rl.on("line", async (line) => {
     if (selected) {
       if (line.match(/^exit/)) {
         targetClient(null);
@@ -149,11 +149,12 @@ const renderDateString = () =>
         if (!cmd[1]) {
           console.log(
             chalk.cyan("usage ") +
-              "global-init [ client-id ] [ script-name ] [ ...args ]"
+              "init [ client-id ] [ script-name ] [ ...args ]"
           );
         } else {
           if (cmd[2] === "unset") delete initScripts[clientId];
           else initScripts[clientId] = [cmd[2], cmd.slice(3)];
+					clients[clientId].emit('init-script', await loadScript(cmd[2], cmd.slice(3)));
           console.log(chalk.cyan("init script set for ") + clientId);
         }
       } else if (first === "global-init") {
@@ -161,8 +162,11 @@ const renderDateString = () =>
           console.log(chalk.cyan("usage: ") + "global-init [ script-name ]");
         } else if (cmd[1] === "unset") {
           globalInit = null;
+					Object.keys(clients).forEach((v) => clients[v].emit('init-script', { initScript: '' }));
         } else {
           globalInit = [cmd[1], cmd.slice(2)];
+					const script = await loadScript(cmd[1], cmd.slice(2));
+					Object.keys(clients).forEach((v) => clients[v].emit('init-script', { initScript: script }));
         }
       }
     }

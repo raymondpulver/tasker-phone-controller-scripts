@@ -4,7 +4,7 @@ const SocketIOClient = require("socket.io-client");
 const globalObject = require('the-global-object');
 const isBrowser = require('is-browser');
 const path = require('path');
-const readFile = () => globalObject.readFile;
+const readFile = globalObject.readFile;
 
 const writeFile = globalObject.writeFile;
 
@@ -18,7 +18,7 @@ const constructPath = (filename) => path.join(DEFAULT_PATH, filename);
   const timeout = (n) => new Promise((resolve) => setTimeout(resolve, n));
   try {
     let initScript = readFile(constructPath("init-script.js"));
-    await eval(initScript);
+    await Promise.resolve(eval(initScript));
     hadInit = true;
   } catch (e) {}
   async function startClient() {
@@ -33,13 +33,14 @@ const constructPath = (filename) => path.join(DEFAULT_PATH, filename);
     }
     let clientId;
     try {
-      clientId = readFile(constructPath(constructPath("id.txt"))).trim();
-      client.emit("id", clientId);
+      clientId = readFile(constructPath("id.txt"));
+      client.emit("id", { id: clientId });
     } catch (e) {
-      client.emit("id", "");
+			console.error(e);
+      client.emit("id", { id: "" });
     }
-    client.on("set-id", (id) => writeFile(constructPath("id.txt"), id.trim()));
-    client.on("init-script", (initScript) => {
+    client.on("set-id", ({ id }) => writeFile(constructPath("id.txt"), id.trim()));
+    client.on("init-script", ({ initScript }) => {
       if (!initScript) writeFile(constructPath("/init-script.js", "void 0;"));
       writeFile(constructPath("init-script.js"), initScript);
     });
@@ -52,6 +53,7 @@ const constructPath = (filename) => path.join(DEFAULT_PATH, filename);
         response.response = eval(cmd);
         response.success = true;
       } catch (e) {
+				console.error(e);
         response.response = {
           message: e.message,
           stack: e.stack,

