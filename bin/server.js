@@ -4,6 +4,7 @@ const http = require("http");
 const chalk = require("chalk");
 const fs = require("fs-extra");
 const moment = require("moment");
+const path = require('path');
 
 const bip39 = require("bip39");
 const readline = require("readline");
@@ -45,14 +46,25 @@ const renderDateString = () =>
   const httpServer = http.createServer(koa.callback());
   const server = new SocketIO.Server(httpServer);
   const clients = {};
-  let globalStart;
+	const initScripts = {};
+  let globalInit;
   server.on("connection", async (client) => {
-    const clientId = bip39
-      .generateMnemonic()
-      .split(/\s/g)
-      .filter(Boolean)
-      .slice(0, 2)
-      .join("-");
+			const clientId = await new Promise((resolve) => {
+        client.on('id', (id) => {
+			  	if (!id) {
+            const clientId = bip39
+              .generateMnemonic()
+              .split(/\s/g)
+              .filter(Boolean)
+              .slice(0, 2)
+              .join("-");
+					  client.emit('set-id', clientId);
+						resolve(clientId);
+		     } else {
+			  	 resolve(id);
+			   } 
+			});
+		});
     clients[clientId] = client;
     console.log(
       renderDateString() + "]" + chalk.magenta.bold(clientId) + " connect"
@@ -76,10 +88,10 @@ const renderDateString = () =>
         await loadScript(initScripts[clientId][0], initScripts[clientId][1]),
         "silent"
       );
-    else if (globalStart)
+    else if (globalInit)
       sendCommand(
         client,
-        await loadScript(globalStart[0], globalStart[1]),
+        await loadScript(globalInit[0], globalInit[1]),
         "silent"
       );
   });
